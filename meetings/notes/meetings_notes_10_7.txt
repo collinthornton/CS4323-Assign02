@@ -1,0 +1,79 @@
+Attendees:
+	Collin
+	Ethan
+
+
+-----------------------------
+Notes
+----------
+- Utilize Msg struct accross code:
+
+typedef struct {
+	unsigned short type_of_msg; (command, return, etc)
+	unsigned int size_of_msg;
+	char* msg_allocated_on_heap;
+}
+
+- 2 processes (client & server)
+  
+ON CLIENT PROCESS
+  - Prompt Interface	
+	- Reads/writes to stdin/stdout
+	- Allocates command string on heap
+	- Deallocates returns from heap
+	- Passes/receives to Client Interface
+  - Client Interface
+	- Reads/writes to Server Interface (via socket)
+	- Passes/receives to Prompt Interface
+
+ON SERVER PROCESS
+   - Server Interface
+	- Reads/writes to Client Interface (via socket)
+	- Passes to History
+	- Passes/receives to Command Interpreter
+   - Command Interpreter
+	- Processes commands for special characters (pipe, amperesand, etc)
+	- Passes/receives to Foreground
+	- Passes/receives to Background
+	- Receives form History
+   - History
+	- Make a copy of command (potentially make duplicate heap allocation)
+	- Recieves from Server Interface
+	- Passes to Command Interpreter
+   - Background
+	- Spawn process to execute command in background
+	- Passes/receives to Command Interpreter
+   - Foreground
+	- Execute command in foreground
+	- Passes/receives to Command Interpreter
+	 
+	
+
+- Any function that will block either process needs to be vetted by team
+- Prefer use of flags/polling over blocking calls
+- Default path found at /etc/environment. Can be sourced there.
+
+-----------------------------
+Questions
+----------
+
+Bash Shell Commands
+	- Do we only need to implement what's in part 4?
+	- How do we interpret the various redirects
+	- How will we know to run a process in the background?
+		- If ampersand -> it isn't in part 4. What are expectations?
+	- Can we have a couple examples?
+
+
+-----------------------------
+Goals for next meeting
+----------
+
+- Have definitions for all functions to be called by other people
+- Enough detail to create .h file
+
+- Once these definitions are created, they shouldn't be changed w/out group consensus
+	- This is for the functions used by other people
+	- Do whatever you want with the functions only used by you
+
+
