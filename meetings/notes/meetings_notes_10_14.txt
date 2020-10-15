@@ -1,0 +1,38 @@
+Attendees:
+	Collin
+	Ethan
+	Kazi
+
+
+-----------------------------
+Notes
+----------
+
+- Refer to the block diagram for clarification on flow of information.
+- Refer to msg.h for the message structure.
+
+
+--------
+-- Example of simple handling on shell interface using the Msg struct
+--------
+while(1) {
+    printDir();
+    const char* input = getInput();
+
+    Msg req;
+    init_msg(&req, input, NULL);
+    sendToClient(&req);
+
+    Msg *resp = recieveFromClient(&resp);
+
+    while(strcmp(resp->cmd, input) != 0) {
+        displayReturn(resp->ret);
+        resp = receiveFromClient(&resp);
+    }
+
+    displayReturn(resp->return);
+}
+
+------
+
+
