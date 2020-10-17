@@ -2,7 +2,7 @@
 // 
 //   Author  -   Collin Thornton
 //   Email   -   collin.thornton@okstate.edu
-//   Assign  -   Assignment 02 msg struct header
+//   Brief   -   Assignment 02 msg struct header
 //   Date    -   10-14-20
 //
 // ########################################## 

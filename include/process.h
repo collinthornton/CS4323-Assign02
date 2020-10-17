@@ -2,7 +2,7 @@
 // 
 //   Author  -   Collin Thornton
 //   Email   -   collin.thornton@okstate.edu
-//   Assign  -   Assignment 02 process struct header
+//   Brief   -   Assignment 02 process struct header
 //   Date    -   10-14-20
 //
 // ########################################## 
@@ -30,11 +30,12 @@ typedef struct {
 /*
 // @brief Node in linked list of processes
 */
-typedef struct {
+struct ProcessNode{
     Process *node;
-    Process *next;
-    Process *prev;
-} ProcessNode;
+    struct ProcessNode *next;
+    struct ProcessNode *prev;
+};
+typedef struct ProcessNode ProcessNode;
 
 
 /*
@@ -49,10 +50,12 @@ typedef struct {
 
 
 Process* process_init(Process* proc, Msg *msg);
-ProcessNode* process_node_init(ProcessNode *node, Process *proc, Process *next, Process *prev);
 ProcessList* process_list_init(ProcessList *list, ProcessNode *HEAD, ProcessNode *TAIL);
 
-int add_node(ProcessList *list, Process *proc);
-int remove_node(ProcessList *list, Process *proc);
+int process_list_add_node(ProcessList *list, Process *proc);
+int process_list_rem_node(ProcessList *list, Process *proc);
+int process_list_del_list(ProcessList *list);
+
+const char* process_list_to_string(ProcessList *list, char buff[]);
 
 #endif // PROCESS_H
