@@ -9,7 +9,7 @@
 
 #include "../include/background.h"
 
-#define EXEC_BACK
+//#define EXEC_BACK
 
 /*
 int* background_init(int* shd_ptr) {
@@ -70,7 +70,8 @@ int background_place_proc(ProcessList *list, Process *proc) {
         //newfd = open("test.txt", O_CREAT|O_TRUNC|O_WRONLY, 0644);
         //dup2(newfd, 1);
 
-        execvp(proc->exec, proc->args); 
+        execvp(proc->exec, proc->args);
+
     }  else if(proc->pid < 0) perror("background_place_proc(): fork()");
 
     proc->initialized = true;
@@ -104,7 +105,7 @@ void background_test() {
     msg1.ret = NULL;
 
     Msg msg2;
-    msg2.cmd = "ps -A";
+    msg2.cmd = "psh -A";
     msg2.ret = NULL;
 
     Process proc1;

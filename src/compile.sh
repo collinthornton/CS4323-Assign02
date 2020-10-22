@@ -1,3 +1,3 @@
 #! /bin/bash
 
-gcc process.c background.c main.c -o main -g
+gcc process.c background.c server.c client.c main.c -o main -g

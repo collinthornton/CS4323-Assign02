@@ -10,7 +10,8 @@
 #define VERBOSE
 
 
-#include "../include/background.h"
+#include "../include/client.h"
+#include "../include/server.h"
 
 int server(void);
 int client(void);
@@ -38,60 +39,6 @@ int main(int argc, char** argv) {
 
     exit(0);                                // EXIT
 }
-
-
-
-int server(void) {
-    #ifdef VERBOSE
-    printf("|----- SERVER:\t%d, %d\r\n", getppid(), getpid());
-    #endif // VERBOSE
-
-    // SERVER INTERFACE
-
-
-    //system("echo 'THIS IS A TEST WITH system()'");
-
-    //sleep(3);
-
-    // HISTORY
-
-
-
-    // INTERPRETER
-
-
-
-    // FOREGROUND
-
-
-
-    // BACKGROUND
-    //process_list_test();
-
-    //background_test();
-
-    //sleep(2);
-    printf("Exiting server\r\n");
-
-    return 0;
-}
-
-
-
-int client(void) {
-    #ifdef VERBOSE
-    printf("|----- CLIENT:\t%d, %d\r\n", getppid(), getpid());
-    #endif // VERBOSE
-
-    // SHELL INTERFACE
-
-
-
-    // CLIENT INTERFACE
-
-    return 0;
-}
-
 
 
 
