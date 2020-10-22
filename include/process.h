@@ -22,8 +22,11 @@ typedef struct {
     bool returned;              // Has process returned
 
     int pid;
+    int num_args;
 
-    Msg *msg;
+    char *exec;
+    char **args;
+    char *ret;
 } Process;
 
 
@@ -50,6 +53,8 @@ typedef struct {
 
 
 Process* process_init(Process* proc, Msg *msg);
+int process_rem(Process* proc);
+
 ProcessList* process_list_init(ProcessList *list, ProcessNode *HEAD, ProcessNode *TAIL);
 
 int process_list_add_node(ProcessList *list, Process *proc);

@@ -9,20 +9,11 @@
 
 #define VERBOSE
 
-#include "../include/msg.h"
-#include "../include/process.h"
 
-#include <stdio.h>		// for printf()
-#include <unistd.h>		// for fork()
-#include <stdlib.h>		// for exit()
-
-#include <sys/wait.h>   // for wait()
+#include "../include/background.h"
 
 int server(void);
 int client(void);
-
-
-void process_list_test(void);
 
 
 int main(int argc, char** argv) {
@@ -58,6 +49,10 @@ int server(void) {
     // SERVER INTERFACE
 
 
+    //system("echo 'THIS IS A TEST WITH system()'");
+
+    //sleep(3);
+
     // HISTORY
 
 
@@ -71,7 +66,12 @@ int server(void) {
 
 
     // BACKGROUND
-    process_list_test();
+    //process_list_test();
+
+    //background_test();
+
+    //sleep(2);
+    printf("Exiting server\r\n");
 
     return 0;
 }
@@ -95,43 +95,3 @@ int client(void) {
 
 
 
-void process_list_test() {
-    #ifdef VERBOSE
-    printf("|----- BEGINNING PROCESS LIST TEST\r\n\r\n");
-    #endif // VERBOSE
-
-    Msg msg;
-    msg.cmd = "/bin/ls";
-
-    Process proc;
-    process_init(&proc, &msg);
-    proc.pid = getpid() + 1;
-
-    Process proc1;
-    process_init(&proc1, &msg);
-    proc1.pid = getpid() + 2;
-
-    Process proc2;
-    process_init(&proc2, &msg);
-    proc2.pid = getpid() + 3;
-
-    ProcessList proc_list;
-    process_list_init(&proc_list, NULL, NULL);
-
-    process_list_add_node(&proc_list, &proc);
-    process_list_add_node(&proc_list, &proc1);
-    process_list_add_node(&proc_list, &proc2);
-
-    ProcessNode *tmp = proc_list.HEAD;
-
-    char buff[1024];
-
-    printf("%s\r\n", process_list_to_string(&proc_list, buff));
-
-    process_list_rem_node(&proc_list, &proc1);
-
-    buff[0] = '\0';
-    printf("%s\r\n", process_list_to_string(&proc_list, buff));
-
-    process_list_del_list(&proc_list);
-}
