@@ -2,29 +2,24 @@
 // 
 //   Author  -   Group I
 //   Email   -   collin.thornton@okstate.edu
-//   Assign  -   Assignment 02 main
+//   Brief   -   Assignment 02 main
 //   Date    -   10-14-20
 //
 // ########################################## 
 
+#define VERBOSE
 
-#include "../include/msg.h"
-//#include "../include/process.h"
 
-#include <stdio.h>		// for printf()
-#include <unistd.h>		// for fork()
-#include <stdlib.h>		// for exit()
-
-#include <sys/wait.h>   // for wait()
+#include "../include/client.h"
+#include "../include/server.h"
 
 int server(void);
 int client(void);
 
 
-
 int main(int argc, char** argv) {
 
-    pid_t pids[2];
+    pid_t pids[2] = { 0, 0 };
     for(int i=0; i<2; ++i) {
         if((pids[i] = fork()) < 0) {        // SPAWN PROCESSES
             perror("Fork failed");
@@ -47,37 +42,3 @@ int main(int argc, char** argv) {
 
 
 
-int server(void) {
-    // SERVER INTERFACE
-
-
-
-    // HISTORY
-
-
-
-    // INTERPRETER
-
-
-
-    // FOREGROUND
-
-
-
-    // BACKGROUND
-
-    return 0;
-}
-
-
-
-int client(void) {
-    // SHELL INTERFACE
-
-
-
-
-    // CLIENT INTERFACE
-
-    return 0;
-}
