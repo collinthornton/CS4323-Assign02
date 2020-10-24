@@ -15,12 +15,14 @@
 
 
 typedef struct {
-    const char *cmd;
+    char *cmd;
     char *ret;
+
+    char* dir;
 } Msg;
 
 
-Msg* msg_allocate(const char* cmd, char *ret);      // Allocate & initialize Msg struct on heap
+Msg* msg_allocate(char* cmd, char *ret, char* dir);      // Allocate & initialize Msg struct on heap
 void msg_deallocate(Msg *msg);                      // Deallocate Msg struct
 
 const char* msg_serialize(Msg *msg);                // Convert Msg to string for socket

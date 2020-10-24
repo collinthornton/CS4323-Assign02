@@ -10,8 +10,10 @@
 #include "../include/msg.h"
 
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-Msg* msg_allocate(const char* cmd, char* ret) {
+Msg* msg_allocate(char* cmd, char* ret, char *dir) {
     Msg *msg = (Msg*)malloc(sizeof(Msg));
 
     if(msg == NULL) {
@@ -21,6 +23,7 @@ Msg* msg_allocate(const char* cmd, char* ret) {
 
     msg->cmd = NULL;
     msg->ret = NULL;
+    msg->dir = NULL;
 
     if(cmd != NULL) {
         int size_cmd = sizeof(cmd);
@@ -41,6 +44,17 @@ Msg* msg_allocate(const char* cmd, char* ret) {
             return NULL;
         }
         strcpy(msg->ret, ret);
+    }
+
+    if(dir != NULL) {
+        int size_cmd = sizeof(dir);
+        msg->dir = (char*)malloc(size_cmd + 1);
+
+        if(msg->dir == NULL) {
+            perror("msg->dir: allocation");
+            return(NULL);
+        }
+        strcpy(msg->dir, dir);
     }
 
     return msg;
