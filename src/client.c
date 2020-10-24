@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <time.h>
 
 #include "../include/client.h"
@@ -15,7 +14,7 @@
 char input[1024];
 bool input_read = false;
 
-sem_t sem;
+//sem_t sem;
 
 int client(void) {
     #ifdef VERBOSE
@@ -32,8 +31,6 @@ int client(void) {
     strcpy(home_dir, "/home/");
     strcat(home_dir, user);
 
-    sem_init(&sem, )
-
     pthread_t tid;
     pthread_create(&tid, NULL, inputThread, NULL);
 
@@ -44,8 +41,10 @@ int client(void) {
         Msg *msg;
         // PRINT PROMPT IF INPUT READ
         if(input_read == true) {
-            printf("%s\r\n", input);
             input_read = false;
+
+            // REMOVE NEW LINE CHARACTER
+            input[strlen(input)-1] = '\0';
         
             // ALLOCATE MSG
             msg = msg_allocate(input, NULL, NULL);
@@ -57,8 +56,7 @@ int client(void) {
 
 
             // PRINT PROMPT
-            //(strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
-            //printf("%s\r\n", msg->cmd);
+            (strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
 
             msg_deallocate(msg);  //! ERASE ME
         }
@@ -66,8 +64,6 @@ int client(void) {
         // SEND TO CLIENT INTERFACE
 
         // CLEAR CLIENT INTERFACE BUFFER
-
-
 
 
         // Sleep for 0.01 second
@@ -91,11 +87,9 @@ int client(void) {
 
 void *inputThread(void *vargp) {
     while(1) {
-        scanf("%[^\n]s", input);
-        //printf("%s", input);
+        fgets(input, sizeof(input), stdin);
         input_read = true;
-        
-        
+           
         struct timespec ts;
         ts.tv_sec  = 1E-2;
         ts.tv_nsec = 1E7;
