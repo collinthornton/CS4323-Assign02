@@ -1,15 +1,21 @@
 #include <stdio.h> 
 #include <netdb.h> 
+#include <unistd.h>
 #include <netinet/in.h> 
 #include <stdlib.h> 
 #include <string.h> 
 #include <sys/socket.h> 
 #include <sys/types.h> 
+
+#include "../include/msg.h"
+
 #define sockA struct sockaddr
+
+void chat(int sockfd, char *out);
 
 int main(int argc, char const *argv[]){
 
-    int PORT = 8080;
+    int PORT = 8081;
     int sockfd, connfd, len; 
     struct sockaddr_in servaddr, cli; 
     
@@ -59,7 +65,7 @@ int main(int argc, char const *argv[]){
   
     // Message to send
     char toClient[1024];
-    bzero(&toClient, sizeof(toClient));
+    strcpy(toClient, "ACK");
 
     // Function for chatting between client and server 
     chat(connfd,toClient);  
@@ -67,25 +73,53 @@ int main(int argc, char const *argv[]){
 
 void chat(int sockfd, char *out){ 
     char buff[1024]; 
-    char out[1024] = out;
+    char outbuff[1024];
     char message[1024];
     int n; 
 
-    // Clear buffer
-    bzero(buff, 1024); 
+    printf("Entering loop\r\n");
+    while(1) {
+        //strcpy(outbuff, out);
 
-    // Message from client, needs to be sent elsewhere
-    message = read(sockfd, buff, sizeof(buff)); 
+        // Clear buffer
+        bzero(buff, 1024); 
 
-    // Clear buffer
-    bzero(buff, 1024); 
-  
-    // Send message to client
-    write(sockfd, out, sizeof(buff)); 
-  
-    //Close server if "exit" 
-    if (strncmp("exit", buff, 4) == 0){ 
-        printf("Close Server\n"); 
-        close(sockfd);
+        // Message from client, needs to be sent elsewhere
+        if(read(sockfd, buff, sizeof(buff)) == -1) {
+            printf("Socket closed\r\n");
+            exit(0);
+        }
+        strcpy(message, buff);
+
+        Msg *msg = msg_deserialize(message);
+        printf("cmd:\t%s\r\n", msg->cmd);
+        printf("ret:\t%s\r\n", msg->ret);
+        printf("dir:\t%s\r\n", msg->dir);
+        printf("show prompt:\t%d\r\n\r\n", msg->show_prompt);
+
+
+        // Clear buffer
+        bzero(buff, 1024); 
+    
+        // Send message to client
+        printf("Sending ACK\r\n");
+
+        strcpy(msg->ret, "ACK");
+
+        char dir[100];
+        getcwd(dir, sizeof(dir));
+
+        strcpy(msg->dir, dir);
+        msg_serialize(msg, buff);
+        write(sockfd, buff, sizeof(buff)); 
+        msg_deallocate(msg);
+
+    
+        //Close server if "exit" 
+        if (strncmp("q", message, 1) == 0){ 
+            printf("Close Server\n"); 
+            close(sockfd);
+            exit(0);
+        }
     }
 } 
