@@ -1,22 +1,16 @@
-#include <stdio.h> 
-#include <netdb.h> 
-#include <unistd.h>
-#include <netinet/in.h> 
-#include <stdlib.h> 
-#include <string.h> 
-#include <sys/socket.h> 
-#include <sys/types.h> 
+#include "../include/clientServerEV.h"
 
-#include "../include/msg.h"
+int PORT = 8081;
+int sockfd, connfd;
+pthread_t tid = 0;
 
-#define sockA struct sockaddr
+bool sock_exit_flag = false;
+char sock_input[SOCKET_BUFF];
+int sock_queue_len = 0;
 
-void chat(int sockfd, char *out);
 
-int main(int argc, char const *argv[]){
-
-    int PORT = 8081;
-    int sockfd, connfd, len; 
+int socket_init(void) {
+    int len; 
     struct sockaddr_in servaddr, cli; 
     
     // Create and verify socket
@@ -62,67 +56,46 @@ int main(int argc, char const *argv[]){
     } else {
         printf("Accept Success\n"); 
     }
-  
-    // Message to send
-    char toClient[1024];
-    strcpy(toClient, "ACK");
 
-    // Function for chatting between client and server 
-    chat(connfd,toClient);  
-} 
+    pthread_create(&tid, NULL, sockReadThread, NULL);
+}
 
-void chat(int sockfd, char *out){ 
-    char buff[1024]; 
-    char outbuff[1024];
-    char message[1024];
-    int n; 
 
-    printf("Entering loop\r\n");
-    while(1) {
-        //strcpy(outbuff, out);
+Msg* socket_read() {
+    if(sock_queue_len <= 0) return NULL;
+    --sock_queue_len;
 
-        // Clear buffer
-        bzero(buff, 1024); 
+    char buff[SOCKET_BUFF];
+    strcpy(buff, sock_input);
 
-        // Message from client, needs to be sent elsewhere
-        if(read(sockfd, buff, sizeof(buff)) == -1) {
-            printf("Socket closed\r\n");
-            exit(0);
+    Msg *msg = msg_deserialize(buff);
+    return msg;    
+}
+
+
+int socket_write(Msg *msg) {
+    char buff[SOCKET_BUFF];
+    msg_serialize(msg, buff);
+
+    write(connfd, buff, sizeof(buff)); 
+    msg_deallocate(msg);
+}
+
+void socket_close() {
+    if(tid != 0) pthread_cancel(tid);
+}
+
+// THREAD TO READ SOCKET
+void *sockReadThread(void *vargp) {
+    while(!sock_exit_flag) {
+        char buff[SOCKET_BUFF];
+        bzero(buff, SOCKET_BUFF);
+
+        if(read(connfd, buff, sizeof(buff)) == -1) {
+            perror("client:  socket closed");
+            exit(1);
         }
-        strcpy(message, buff);
-
-        Msg *msg = msg_deserialize(message);
-        printf("cmd:\t%s\r\n", msg->cmd);
-        printf("ret:\t%s\r\n", msg->ret);
-        printf("dir:\t%s\r\n", msg->dir);
-        printf("show prompt:\t%d\r\n\r\n", msg->show_prompt);
-
-
-        // Clear buffer
-        bzero(buff, 1024); 
-    
-        // Send message to client
-        printf("Sending ACK\r\n");
-
-        strcpy(msg->ret, "ACK");
-
-        char dir[100];
-        getcwd(dir, sizeof(dir));
-
-        strcpy(msg->dir, dir);
-        msg->show_prompt = false;
-
-        msg_serialize(msg, buff);
-
-        write(sockfd, buff, sizeof(buff)); 
-        msg_deallocate(msg);
-
-    
-        //Close server if "exit" 
-        if (strncmp("q", message, 1) == 0){ 
-            printf("Close Server\n"); 
-            close(sockfd);
-            exit(0);
-        }
+        strcpy(sock_input, buff);
+        ++sock_queue_len;
     }
-} 
+}

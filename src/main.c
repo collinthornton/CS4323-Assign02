@@ -9,6 +9,10 @@
 
 #define VERBOSE
 
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
 
 #include "../include/client.h"
 #include "../include/server.h"
@@ -27,9 +31,11 @@ int main(int argc, char** argv) {
 
         if(pids[0] == 0) {
             int server_ret = server();      // EXECUTE SERVER PROCESS
+            //execl("sock", "sock", NULL);
             exit(server_ret);
         }
         if(pids[1] == 0) {
+            sleep(1);
             int client_ret = client();      // EXECUTE CLIENT PROCESS
             exit(client_ret);
         }

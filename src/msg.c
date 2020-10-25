@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define SIZE 500
+#define SIZE 5000
 
 Msg* msg_allocate(char* cmd, char* ret, char *dir) {
     Msg *msg = (Msg*)malloc(sizeof(Msg));
@@ -96,9 +96,9 @@ char* msg_serialize(Msg *msg, char *buff) {
 
 
 Msg* msg_deserialize(const char* str) {
-    char *cmd = (char*)calloc(500, sizeof(char));
-    char *ret = (char*)calloc(500, sizeof(char));
-    char *dir = (char*)calloc(500, sizeof(char));
+    char *cmd = (char*)calloc(SIZE, sizeof(char));
+    char *ret = (char*)calloc(SIZE, sizeof(char));
+    char *dir = (char*)calloc(SIZE, sizeof(char));
     char prmpt[1];
 
     char *pos1 = strstr(str, ":-:");

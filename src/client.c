@@ -12,11 +12,12 @@
 #include <sys/types.h>
 
 #define sockA struct sockaddr
-#define SOCKET_BUFF 1024
+#define SOCKET_BUFF 5000
 
 #include "../include/client.h"
+#include "../include/msg.h"
 
-#define EXEC_CLIENT
+//#define EXEC_CLIENT
 
 bool exit_flag = false;
 
@@ -171,7 +172,6 @@ void *socketReadThread(void *vargp) {
         strcpy(socket_input, buff);
         ++socket_queue_len;
     }
-
 }
 
 

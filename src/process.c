@@ -19,9 +19,9 @@ Process* process_init(Process *proc, Msg *msg) {
     proc->initialized = false;
     proc->returned = false;
     proc->pid = -1;
-    proc->ret = NULL;
+    proc->ret = (char*)calloc(5000, sizeof(char));
     proc->args = NULL;
-    proc->exec = NULL;
+    proc->exec = (char*)calloc(5000, sizeof(char));
     proc->num_args = 0;
 
     char buff[MAX_CMD_SIZE];
@@ -58,7 +58,6 @@ Process* process_init(Process *proc, Msg *msg) {
 
             if(token != NULL) {
                 proc->args[j] = (char*)calloc(50, sizeof(char));
-                //proc->args[j][0] = '-';
                 strcpy(proc->args[j++], token);
             }
         } while(token != NULL);
@@ -66,6 +65,8 @@ Process* process_init(Process *proc, Msg *msg) {
 
        proc->args[j] = NULL;
     }
+
+    return proc;
 }
 
 int process_rem(Process *proc) {

@@ -2,7 +2,6 @@
 #define CLIENT_H
 
 
-#include "msg.h"
 
 int client(void);
 
