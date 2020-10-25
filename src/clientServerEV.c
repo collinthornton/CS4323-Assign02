@@ -110,7 +110,10 @@ void chat(int sockfd, char *out){
         getcwd(dir, sizeof(dir));
 
         strcpy(msg->dir, dir);
+        msg->show_prompt = false;
+
         msg_serialize(msg, buff);
+
         write(sockfd, buff, sizeof(buff)); 
         msg_deallocate(msg);
 

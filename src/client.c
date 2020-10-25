@@ -76,7 +76,8 @@ int client(void) {
 
 
     while(1) {
-        // PRINT PROMPT IF INPUT READ
+
+        // HANDLE STDIN
         if(stdin_input_read == true) {
             stdin_input_read = false;
 
@@ -86,38 +87,46 @@ int client(void) {
             // ALLOCATE MSG
             Msg *msg = msg_allocate(stdin_input, NULL, NULL);
 
+            // SERIALIZE MSG
             char msg_buff[1024];
             bzero(msg_buff, 1024);
             msg_serialize(msg, msg_buff);
             
+            // WRITE TO SOCKET
             write(sockfd, msg_buff, SOCKET_BUFF);
 
+            // DEALLOCATE MSG
             msg_deallocate(msg);
 
+            // QUIT IF q RECEIVED
             if(strcmp(stdin_input, "q") == 0) break;
         }
 
+        // HANDLE SOCKET
         if(socket_queue_len > 0) {
             --socket_queue_len;
 
             //printf("%s\r\n", socket_input);
+
+            // DESERIALZE MESSAGE
             Msg *msg = msg_deserialize(socket_input);
+            
             printf("%s\r\n", msg->ret);
+            
+            // SHOW PROMPT IF DESIRED
             if(msg->show_prompt) {
-                // PRINT PROMPT
-                printf("show prompt\r\n");
                 if(strcmp(msg->dir, home_dir) == 0) {
                     printf("%s@CS4323shell:%s~$ ", user, msg->dir);
                 } else {
                     printf("%s@CS4323shell:%s$ ", user, msg->dir);
                 } 
+                fflush(stdout);
             }
+
+            // DEALLOCATE MESSAGE
             msg_deallocate(msg);
         }
 
-        // SEND TO CLIENT INTERFACE
-
-        // CLEAR CLIENT INTERFACE BUFFER
 
         // Sleep for 0.01 second
         struct timespec ts;
@@ -132,13 +141,11 @@ int client(void) {
     pthread_join(sock_tid, NULL);
     printf("Goodbye\r\n");
 
-    // CLIENT INTERFACE
-
     return 0;
 }
 
 
-
+// THREAD TO READ STDIN
 void *inputThread(void *vargp) {
     while(!exit_flag) {
         fgets(stdin_input, sizeof(stdin_input), stdin);
@@ -151,7 +158,7 @@ void *inputThread(void *vargp) {
     }
 }
 
-
+// THREAD TO READ SOCKET
 void *socketReadThread(void *vargp) {
     while(!exit_flag) {
         char buff[SOCKET_BUFF];
