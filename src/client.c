@@ -37,7 +37,9 @@ int client(void) {
     printf("|----- CLIENT:\t%d, %d\r\n", getppid(), getpid());
     #endif // VERBOSE
 
-
+    bzero(socket_input, sizeof(socket_input));
+    bzero(stdin_input, sizeof(stdin_input));
+    
     const int PORT = 8081;
 
     struct sockaddr_in servaddr, cli;

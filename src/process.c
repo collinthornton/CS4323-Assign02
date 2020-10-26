@@ -21,7 +21,7 @@ Process* process_init(Process *proc, Msg *msg) {
     proc->pid = -1;
     proc->ret = (char*)calloc(5000, sizeof(char));
     proc->args = NULL;
-    proc->exec = (char*)calloc(5000, sizeof(char));
+    proc->exec = (char*)calloc(1000, sizeof(char));
     proc->num_args = 0;
 
     char buff[MAX_CMD_SIZE];
@@ -71,10 +71,10 @@ Process* process_init(Process *proc, Msg *msg) {
 
 int process_rem(Process *proc) {
     if(proc->ret != NULL) free(proc->ret);
-    if(proc->exec != NULL) free(proc->exec);
+    if(proc->exec != NULL)free(proc->exec);
 
     if(proc->args != NULL) {
-        for(int i=0; i<proc->num_args; ++i) {
+        for(int i=0; i<=proc->num_args; ++i) {
             free(proc->args[i]);
         }
         free(proc->args);

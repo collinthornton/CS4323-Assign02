@@ -20,8 +20,21 @@
 int server(void);
 int client(void);
 
+void test(void);
+
+//#define EXEC_MAIN_TEST
+
+
+#ifdef EXEC_MAIN_TEST
+#include <string.h>
+#endif // EXEC_MAIN_TEST
+
 
 int main(int argc, char** argv) {
+    #ifdef EXEC_MAIN_TEST
+        test();
+        return 0;
+    #endif // EXEC_MAIN_TEST
 
     pid_t pids[2] = { 0, 0 };
     for(int i=0; i<2; ++i) {
@@ -48,3 +61,24 @@ int main(int argc, char** argv) {
 
 
 
+
+#ifdef EXEC_MAIN_TEST
+void test(void) {
+    char test1[100] = "this is";
+    char test2[100] = "this | is";
+
+    printf("\r\ntmp1\r\n");
+    char *tmp1 = strtok(test1, "|");
+    do {
+        printf("%s\r\n", tmp1);
+        tmp1 = strtok(NULL, "|");
+    } while(tmp1 != NULL);
+
+    printf("\r\ntmp2\r\n");
+    char *tmp2 = strtok(test2, "|");
+    do {
+        printf("%s\r\n", tmp2);
+        tmp2 = strtok(NULL, "|");
+    } while(tmp2 != NULL);
+}
+#endif // EXEC_MAIN_TEST

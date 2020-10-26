@@ -4,17 +4,40 @@
 #include "../include/background.h"
 #include "../include/clientServerEV.h"
 
-//#define EXEC_SERVER
+// #define EXEC_SERVER
+
+bool loop = true;
+
+int stdin_bak;
+int stderr_bak;
+int stdout_bak;
+
 
 int server(void) {
+    stdin_bak  = dup(STDIN_FILENO);
+    stderr_bak = dup(STDERR_FILENO);
+    stdout_bak = dup(STDOUT_FILENO);
+
     #ifdef VERBOSE
     printf("|----- SERVER:\t%d, %d\r\n", getppid(), getpid());
     #endif // VERBOSE
 
     socket_init();
-    
-    while(1) {
+
+    while(loop) {
+        //char dir_str[1024];
+        //getcwd(dir_str, sizeof(dir_str));
+        //printf("%s$> ", dir_str);
+        //fflush(stdout);
+
+        char input_buff[1024];
+        bzero(input_buff, sizeof(input_buff));
+        
+        //fgets(input_buff, sizeof(input_buff), stdin);
+        //input_buff[strlen(input_buff)-1] = '\0';
         Msg *msg;
+
+        //msg = msg_allocate(input_buff, NULL, NULL);
         do {
             msg = socket_read();
 
@@ -27,7 +50,7 @@ int server(void) {
 
 
         server_command_interpreter(msg);
-
+        //printf("%s\r\n", msg->ret);
         
         // HISTORY
         // INTERPRETER
@@ -42,8 +65,13 @@ int server(void) {
         msg->show_prompt = true;
 
         socket_write(msg);
+        //msg_deallocate(msg);
+
     }
 
+    redirect(STDOUT_FILENO, stdout_bak);
+    redirect(STDERR_FILENO, stderr_bak);
+    redirect(STDIN_FILENO, stdin_bak);
 
     //process_list_test();
 
@@ -69,118 +97,170 @@ Msg* server_command_interpreter(Msg *msg) {
     int pipes[num_pipes][2];
     for(int i=0; i<num_pipes; ++i) pipe(pipes[i]);
 
+
+    // MAKE A COPY OF THE COMMAND
+    char cmd[1024];
+    strcpy(cmd, msg->cmd);
+
+    char *pos = cmd;
+    char *tmp_cmd = (char*)calloc(1024, sizeof(char));
+
     for(int i=0; i<num_pipes; ++i) {
-        char cmd[1024];
-        strcpy(cmd, msg->cmd);
+        char *oldpos;
+        if(i==0) oldpos = pos;
+        else oldpos = pos+2;
 
-        char *tmp;
-        if(i == 0) tmp = strtok(cmd, "|");
-        else tmp = strtok(NULL, "|");
+        pos = strchr(pos+1, '|');
 
-        if(tmp == NULL) tmp = msg->cmd;
+        if(pos != NULL) strncpy(tmp_cmd, oldpos, strlen(oldpos)-strlen(pos)-1);
+        else strncpy(tmp_cmd, oldpos, strlen(cmd)-(strlen(oldpos)-strlen(cmd)-1));
 
-        Msg *tmp_msg = msg_allocate(tmp, NULL, NULL);
-        Process tmp_proc;
-        process_init(&tmp_proc, tmp_msg);
-
-        pid_t child;
-        if((child = fork()) == 0) {
-            close(pipes[i][0]);
-            dup2(pipes[i][1], 1);
-            dup2(pipes[i][1], 2);
-            close(pipes[i][1]);
-
-            if(i > 0) {
-                close(pipes[i-1][1]);
-                dup2(0, pipes[i][0]);
-            }
-
-
-            if(strcmp(tmp_proc.exec, "q") == 0) {
-                // HANDLE EXIT
-            }
-            else if(strcmp(tmp_proc.exec, "cd") == 0) {
-                // HANDLE CD
-                if(tmp_proc.num_args != 2) {}
-            }
-            else if(strcmp(tmp_proc.exec, "history") == 0) {
-                // HANLDE HISTORY
-            }
-            else {
-                execvp(tmp_proc.exec, tmp_proc.args);
-                // HANDLE FAILURE
-            }
-
-            if(i>0) close(pipes[i-1][0]);
-        }
-        else {
-            // CONNECT PIPES
-        }
-
-
+        Msg *tmp_msg = msg_allocate(tmp_cmd, NULL, NULL);
+        process_init(&procs[i], tmp_msg);
         msg_deallocate(tmp_msg);
     }
 
-    Process proc;
-    process_init(&proc, msg);
-    strcpy(msg->ret, proc.ret);
+    free(tmp_cmd);
 
-    return msg;
-    /*
-    
-    if(strcmp(proc.exec, "q") == 0) {
-        socket_close();
-        exit(0);
-    }
-    else if(strcmp(proc.exec, "cd") == 0) {
-        if(proc.num_args != 2) {
-            strcpy(proc.ret, "cd: incorrect number of arguments");
-            strcpy(msg->ret, proc.ret);
 
-            return msg;
+    // ITERATE THROUGH THE JOBS
+    for(int i=0; i<num_pipes; ++i) {
+        #ifdef VERBOSE
+        printf("num pipes: %d\r\n", num_pipes-1);
+        printf("cmd: %s\r\n", cmd);
+        printf("procs_exec: %s\r\n", procs[i].exec);
+        for(int j=0; j<procs[i].num_args; ++j) {
+            printf("procs_args: %s\r\n", procs[i].args[j]);
         }
-        if(chdir(proc.args[1]) != 0) {
-            strcpy(proc.ret, proc.args[1]);
-            strcat(proc.ret, " not a valid folder");
+        printf("\r\n\r\n");
+        #endif // VERBOSE
+
+        if(in_cmd_list(&procs[i])) {
+            // HANDLE OWN COMMANDS
+            char outbuff[5000];
+            bzero(outbuff, sizeof(outbuff));
+
+            run_cmd_list(&procs[i], outbuff);
+            write(pipes[i][1], outbuff, sizeof(outbuff));
+            close(pipes[i][1]);
         }
-    } else {
-        pid_t child;
-        int pipefd[2];
-        pipe(pipefd);
+        else {
+            // HANDLE SYSTEM COMMANDS
+            pid_t child = fork();
+            switch(child) {
+                case -1:
+                    // ERROR:
 
-        if((child = fork()) == 0) {
-            close(pipefd[0]);
-            dup2(pipefd[1], 1);
-            dup2(pipefd[1], 2);
-            close(pipefd[1]);
+                    break;
 
-            execvp(proc.exec, proc.args);
-            char buff[100];
-            strcpy(proc.ret, proc.exec);
-            strcat(proc.ret, " command not found");
-        } else {
+                case 0: {
+                    // CHILD
+                    close(pipes[i][0]);
+                    redirect(STDOUT_FILENO, pipes[i][1]);
+                    redirect(STDERR_FILENO, pipes[i][1]);
 
-            char buff[5000];
-            bzero(buff, sizeof(buff));
-            close(pipefd[1]);
-            while(read(pipefd[0], buff, sizeof(buff)) != 0) { 
-                // Sleep for 0.001 second
-                struct timespec ts;
-                ts.tv_sec  = 1E-3;
-                ts.tv_nsec = 1E6;
-                nanosleep(&ts, &ts);
+                    if(i > 0) {
+                        redirect(STDIN_FILENO, pipes[i-1][0]);
+                    }
+
+                    run(&procs[i]);
+                    exit(0);
+                }
+
+                default:
+                    // PARENT
+                    close(pipes[i][1]);
+                    if(i > 0) close(pipes[i-1][0]);
+
+                    break;
             }
-            close(pipefd[0]);
-
-            strcpy(proc.ret, buff);
         }
     }
-    */
+
+    char buff[5000];
+
+    bzero(buff, sizeof(buff));
+    close(pipes[num_pipes-1][1]);
+    while(read(pipes[num_pipes-1][0], buff, sizeof(buff)) != 0) { 
+        // Sleep for 0.001 second
+    struct timespec ts;
+        ts.tv_sec  = 1E-3;
+        ts.tv_nsec = 1E6;
+        nanosleep(&ts, &ts);
+    }
+    close(pipes[num_pipes-1][0]);
+
+    //printf("%s\r\n", buff);
+
+    strcpy(msg->ret, buff);
+
+    for(int i=0; i<num_pipes; ++i) {
+        process_rem(&procs[i]);
+    }
+    return msg;
 }
 
 
 
 
+void redirect(int fdfrom, int fdto) {
+    dup2(fdto, fdfrom);
+    close(fdto);
+}
+
+void run(Process *proc) {
+    execvp(proc->exec, proc->args);
+    exit(-1);
+    // HANDLE FAILURE
+}
+
+
+void run_cmd_list(Process *proc, char *outbuff) {
+    if(strcmp(proc->exec, "q") == 0) {
+        // HANDLE EXIT
+        strcpy(outbuff, "shutdown");
+        init_shutdown();
+        return;
+    }
+    else if(strcmp(proc->exec, "cd") == 0) {
+        // HANDLE CD
+        if(proc->num_args != 2) {
+            strcpy(outbuff, "cd: incorrect number of arguments");
+            return;
+        }
+        if(chdir(proc->args[1]) != 0) {
+            strcpy(outbuff ,"cd: not a valid folder");
+            fflush(stdout);
+            return;
+        }      
+        strcpy(outbuff, "cd"); 
+        return; 
+    }
+    else if(strcmp(proc->exec, "history") == 0) {
+        // HANDLE HISTORY
+        //! WRITE TO PIPE
+    }
+}
+
+
+bool in_cmd_list(Process *proc) {
+    int num_cmds = 3;
+    const char* cmd_list[3];
+    cmd_list[0] = "q";
+    cmd_list[1] = "cd";
+    cmd_list[2] = "history";
+
+    for(int i=0; i<num_cmds; ++i) {
+        if(strcmp(cmd_list[i], proc->exec) == 0) return true;
+    }
+    return false;
+}
+
+
+void init_shutdown(void) {
+    // SEND SHUTDOWN MSG TO CLIENT
+    loop = false;
+}
 
 
 
