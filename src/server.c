@@ -11,7 +11,7 @@ bool in_foreground = false;
 
 Msg *resp;
 
-ProcessList background_list;
+ProcessList background_list, history;
 
 int foreground_stdin[2];
 
@@ -38,6 +38,7 @@ int server(void) {
     #endif // EXEC_SERVER
 
     process_list_init(&background_list, NULL, NULL);
+    process_list_init(&history, NULL, NULL);
     
 
     while(loop) {
@@ -59,6 +60,14 @@ int server(void) {
         #endif // EXEC_SERVER
 
         if(msg != NULL ) {
+
+            Process history_node;
+            process_init(&history_node, msg);
+            strcpy(history_node.exec, msg->cmd);
+            process_list_add_node(&history, &history_node);
+            process_rem(&history_node);
+
+
             bool only_whitespace = true;
 
             for(int i=strlen(msg->cmd)-1; i>=0; --i) {
@@ -147,6 +156,9 @@ int server(void) {
     redirect(STDOUT_FILENO, stdout_bak);
     redirect(STDERR_FILENO, stderr_bak);
     redirect(STDIN_FILENO, stdin_bak);
+
+    process_list_del_list(&background_list);
+    process_list_del_list(&history);
 
 
     #ifdef VERBOSE
@@ -255,6 +267,7 @@ void* server_command_interpreter(void* vargp) {
                     close(pipes[i-1][0]);
 
                     run(&procs[i-1]);
+                    process_rem(&procs[i-1]);
                     exit(0);
                 }
 
@@ -312,7 +325,7 @@ void run(Process *proc) {
 
 
 void run_cmd_list(Process *proc, char *outbuff) {
-    if(strcmp(proc->exec, "q") == 0) {
+    if(strcmp(proc->exec, "exit") == 0) {
         // HANDLE EXIT
         strcpy(outbuff, "shutdown");
         init_shutdown();
@@ -333,7 +346,8 @@ void run_cmd_list(Process *proc, char *outbuff) {
     }
     else if(strcmp(proc->exec, "history") == 0) {
         // HANDLE HISTORY
-        //! WRITE TO PIPE
+        process_list_to_string(&history, outbuff);
+        return;
     }
     else if(strcmp(proc->exec, "jobs") == 0) {
         background_update_procs(&background_list);
@@ -341,16 +355,26 @@ void run_cmd_list(Process *proc, char *outbuff) {
        // printf("%s\r\n", outbuff);
         return;
     }
+    else if(strcmp(proc->exec, "help") == 0) {
+        sprintf(outbuff, "CMD\t\tDESCRIPTION\r\n\r\n");
+        sprintf(outbuff + strlen(outbuff), "exit\t\texit shell\r\n");
+        sprintf(outbuff + strlen(outbuff), "cd\t\tchange directory\r\n");
+        sprintf(outbuff + strlen(outbuff), "history\t\tdisplay command history\r\n");
+        sprintf(outbuff + strlen(outbuff), "jobs\t\tlist jobs in background\r\n");
+        sprintf(outbuff + strlen(outbuff), "help\t\tdisplay this help message\r\n\r\n");
+        return;
+    }
 }
 
 
 bool in_cmd_list(Process *proc) {
-    int num_cmds = 4;
+    int num_cmds = 5;
     const char* cmd_list[num_cmds];
-    cmd_list[0] = "q";
+    cmd_list[0] = "exit";
     cmd_list[1] = "cd";
     cmd_list[2] = "history";
     cmd_list[3] = "jobs";
+    cmd_list[4] = "help";
 
     for(int i=0; i<num_cmds; ++i) {
         if(strcmp(cmd_list[i], proc->exec) == 0) return true;

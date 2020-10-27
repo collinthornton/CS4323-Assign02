@@ -208,13 +208,16 @@ const char* process_list_to_string(ProcessList *list, char buff[]) {
     
     if(list->HEAD == NULL || list->TAIL == NULL) return buff;
     
-    sprintf(buff + strlen(buff), "CMD\t\tPID\r\n\r\n");
+    sprintf(buff + strlen(buff), "CMD\t\t\tPID\r\n\r\n");
 
     ProcessNode *tmp = list->HEAD;
-    sprintf(buff + strlen(buff), "%s\t\t%d\r\n", tmp->node->exec, tmp->node->pid);
+    sprintf(buff + strlen(buff), "0.) %s\t\t%d\r\n", tmp->node->exec, tmp->node->pid);
+    
+    int i=0;
     while(tmp != list->TAIL) {
         tmp = tmp->next;
-        sprintf(buff + strlen(buff), "%s\t\t%d\r\n", tmp->node->exec, tmp->node->pid);
+        ++i;
+        sprintf(buff + strlen(buff), "%d.) %s\t\t%d\r\n", i, tmp->node->exec, tmp->node->pid);
     }
 
     return buff;

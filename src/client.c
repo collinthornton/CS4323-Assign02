@@ -39,13 +39,22 @@ int client(void) {
     bzero(socket_input, sizeof(socket_input));
     bzero(stdin_input, sizeof(stdin_input));
     
-    const int PORT = 8081;
+    const int PORT = 8082;
 
     struct sockaddr_in servaddr, cli;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd == -1) {
         perror("client: socket()");
+        exit(1);
+    }
+
+    struct timeval timeout;
+    timeout.tv_sec = 3;
+    timeout.tv_usec = 0;
+
+    if(setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+        perror("client: setsockopt");
         exit(1);
     }
 
@@ -74,7 +83,24 @@ int client(void) {
     pthread_create(&stdin_tid, NULL, inputThread, NULL);
     pthread_create(&sock_tid, NULL, socketReadThread, NULL);
 
-    (strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
+    //(strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
+    printf("CS4323 ASSIGNMENT II GROUP I\r\n");
+    printf("C SHELL EMULATOR\r\n\r\n");
+    printf("Collin Thornton\r\nEthan Vascellar\r\nKazi Sharif\r\nCaleb Goodart\r\n\r\n");
+    printf("HELP DISPLAY:\r\n\r\n");
+
+    Msg *init_msg;
+    init_msg = msg_allocate("help", NULL, NULL);
+    char init_msg_buff[SOCKET_BUFF];
+    bzero(init_msg_buff, sizeof(init_msg_buff));
+    msg_serialize(init_msg, init_msg_buff);
+
+    msg_deallocate(init_msg);
+
+    if(write(sockfd, init_msg_buff, SOCKET_BUFF) < 0) {
+        perror("client: write()");
+        exit(1);
+    }
 
 
     while(1) {
@@ -95,7 +121,7 @@ int client(void) {
             msg_serialize(msg, msg_buff);
             
             // WRITE TO SOCKET
-            if(write(sockfd, msg_buff, SOCKET_BUFF) == -1) {
+            if(write(sockfd, msg_buff, SOCKET_BUFF) < 0) {
                 perror("client: write()");
                 exit(1);
             }
@@ -104,7 +130,7 @@ int client(void) {
             msg_deallocate(msg);
 
             // QUIT IF q RECEIVED
-            if(strcmp(stdin_input, "q") == 0) break;
+            if(strcmp(stdin_input, "exit") == 0) break;
         }
 
         // HANDLE SOCKET

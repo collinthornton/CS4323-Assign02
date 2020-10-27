@@ -1,6 +1,6 @@
 #include "../include/clientServerEV.h"
 
-int PORT = 8081;
+int PORT = 8082;
 int sockfd, connfd;
 pthread_t tid = 0;
 
