@@ -18,8 +18,6 @@ int socket_init(void) {
     if (sockfd == -1) { 
         printf("Socket Failed\n"); 
         exit(0); 
-    } else {
-        printf("Socket Success\n"); 
     }
     
     // Clear servaddr
@@ -34,16 +32,12 @@ int socket_init(void) {
     if ((bind(sockfd, (sockA*)&servaddr, sizeof(servaddr))) != 0) { 
         printf("Bind Failed\n"); 
         exit(0); 
-    } else {
-        printf("Bind Success\n"); 
     }
   
-    // LIstening
+    // Listening
     if ((listen(sockfd, 10)) != 0) { 
         printf("Listen Failed\n"); 
         exit(0); 
-    } else {
-        printf("Listen Success\n"); 
     }
 
     len = sizeof(cli); 
@@ -53,8 +47,6 @@ int socket_init(void) {
     if (connfd < 0) { 
         printf("Accept Failed\n"); 
         exit(0); 
-    } else {
-        printf("Accept Success\n"); 
     }
 
     pthread_create(&tid, NULL, sockReadThread, NULL);
@@ -75,6 +67,7 @@ Msg* socket_read() {
 
 int socket_write(Msg *msg) {
     char buff[SOCKET_BUFF];
+    bzero(buff, sizeof(buff));
     msg_serialize(msg, buff);
 
     write(connfd, buff, sizeof(buff)); 
@@ -83,6 +76,7 @@ int socket_write(Msg *msg) {
 
 void socket_close() {
     if(tid != 0) pthread_cancel(tid);
+    close(connfd);
 }
 
 // THREAD TO READ SOCKET

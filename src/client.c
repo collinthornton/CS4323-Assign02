@@ -30,7 +30,6 @@ bool stdin_input_read = false;
 char socket_input[SOCKET_BUFF];
 int socket_queue_len = 0;
 
-//sem_t sem;
 
 int client(void) {
     #ifdef VERBOSE
@@ -85,18 +84,21 @@ int client(void) {
             stdin_input_read = false;
 
             // REMOVE NEW LINE CHARACTER
-            stdin_input[strlen(stdin_input)-1] = '\0';
+            if(stdin_input[strlen(stdin_input)-1] == '\n') stdin_input[strlen(stdin_input)-1] = '\0';
         
             // ALLOCATE MSG
             Msg *msg = msg_allocate(stdin_input, NULL, NULL);
 
             // SERIALIZE MSG
-            char msg_buff[1024];
-            bzero(msg_buff, 1024);
+            char msg_buff[SOCKET_BUFF];
+            bzero(msg_buff, SOCKET_BUFF);
             msg_serialize(msg, msg_buff);
             
             // WRITE TO SOCKET
-            write(sockfd, msg_buff, SOCKET_BUFF);
+            if(write(sockfd, msg_buff, SOCKET_BUFF) == -1) {
+                perror("client: write()");
+                exit(1);
+            }
 
             // DEALLOCATE MSG
             msg_deallocate(msg);
@@ -114,7 +116,9 @@ int client(void) {
             // DESERIALZE MESSAGE
             Msg *msg = msg_deserialize(socket_input);
             
-            printf("%s\r\n", msg->ret);
+            printf("%s", msg->ret);
+            //printf("%d", msg->show_prompt);
+            fflush(stdout);
             
             // SHOW PROMPT IF DESIRED
             if(msg->show_prompt) {
@@ -151,7 +155,8 @@ int client(void) {
 // THREAD TO READ STDIN
 void *inputThread(void *vargp) {
     while(!exit_flag) {
-        fgets(stdin_input, sizeof(stdin_input), stdin);
+        char *ret = fgets(stdin_input, sizeof(stdin_input), stdin);
+        if(ret == NULL) strcpy(stdin_input, "eof\n");
         stdin_input_read = true;
            
         struct timespec ts;

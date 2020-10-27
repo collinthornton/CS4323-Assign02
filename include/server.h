@@ -7,7 +7,7 @@
 int server(void);
 void init_shutdown(void);
 
-Msg* server_command_interpreter(Msg *msg);
+void* server_command_interpreter(void* vargp);
 
 void redirect(int fdfrom, int fdto);
 void run(Process *proc);

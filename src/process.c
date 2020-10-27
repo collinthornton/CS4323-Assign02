@@ -98,10 +98,31 @@ int process_list_add_node(ProcessList *list, Process *proc) {
     Process *new_proc = (Process*)malloc(sizeof(Process));
     ProcessNode *new_node = (ProcessNode*)malloc(sizeof(ProcessNode));
     new_node->node = new_proc;
-    //new_node->node->msg = proc->msg;
-    new_node->node->initialized = proc->initialized;
-    new_node->node->pid = proc->pid;
-    new_node->node->returned = proc->returned;
+    new_node->next = NULL;
+    new_node->prev = NULL;
+
+    new_proc->initialized = proc->initialized;
+    new_proc->pid = proc->pid;
+    new_proc->returned = proc->returned;
+    new_proc->num_args = proc->num_args;
+
+    new_proc->exec = (char*)calloc(5000, sizeof(char));
+    new_proc->ret = (char*)calloc(5000, sizeof(char));
+    new_proc->args = (char**)malloc((proc->num_args+1)*sizeof(char*));
+    for(int i=0; i<new_proc->num_args; ++i) new_proc->args[i] = (char*)calloc(5000, sizeof(char));
+    new_proc->args[new_proc->num_args] = NULL;
+
+    if(proc->exec != NULL) {
+        strcpy(new_proc->exec, proc->exec);
+    }
+    if(proc->ret != NULL) {
+        strcpy(new_proc->ret, proc->ret);
+    }
+    if(proc->args != NULL) {
+        for(int i=0; i<new_proc->num_args; ++i) {
+            strcpy(new_proc->args[i], proc->args[i]);
+        }
+    }
 
     if(list->num_processes == 0) {
         list->HEAD = new_node;
@@ -114,8 +135,6 @@ int process_list_add_node(ProcessList *list, Process *proc) {
     }
 
     ++list->num_processes;
-    printf("PROCESS ADD NODE INCREMENTING %d\r\n", list->num_processes);
-
     return list->num_processes;
 }
 
@@ -123,17 +142,10 @@ int process_list_rem_node(ProcessList *list, Process *proc) {
     if(list == NULL) return -1;
     if(list->HEAD == NULL || list->TAIL == NULL || list->num_processes <= 0) return -2;
 
-    printf("PROCESS LIST REM NODE %d\r\n", proc->pid);
-    printf("PROCESS LIST NUM NODES %d\r\n", list->num_processes);
-    printf("TAIL: %p\r\n", list->TAIL);
-    printf("HEAD: %p\r\n", list->HEAD);
 
     ProcessNode *tmp = list->HEAD;
-
-    printf("%p\r\n", tmp->node);
     while(tmp != list->TAIL) {
         tmp = tmp->next;
-        printf("%p\r\n", tmp->node);
     }
 
     while(tmp->node->pid != proc->pid) {
@@ -144,6 +156,11 @@ int process_list_rem_node(ProcessList *list, Process *proc) {
     if(list->num_processes == 1) {
         list->HEAD = NULL;
         list->TAIL = NULL;
+        free(tmp->node->exec);
+        free(tmp->node->ret);
+        for(int i=0; i<tmp->node->num_args; ++i) free(tmp->node->args[i]);
+        free(tmp->node->args);
+
         free(tmp->node);
         free(tmp);
         --list->num_processes;
@@ -187,14 +204,18 @@ int process_list_del_list(ProcessList *list) {
 }
 
 const char* process_list_to_string(ProcessList *list, char buff[]) {
-    if(list->HEAD == NULL || list->TAIL == NULL) return NULL;
+    sprintf(buff, "%d jobs\r\n", list->num_processes);
     
+    if(list->HEAD == NULL || list->TAIL == NULL) return buff;
+    
+    sprintf(buff + strlen(buff), "CMD\t\tPID\r\n\r\n");
+
     ProcessNode *tmp = list->HEAD;
-    sprintf(buff, "%d\n", tmp->node->pid);//s\r\n", tmp->node->pid, tmp->node->exec);
-    do {
+    sprintf(buff + strlen(buff), "%s\t\t%d\r\n", tmp->node->exec, tmp->node->pid);
+    while(tmp != list->TAIL) {
         tmp = tmp->next;
-        sprintf(buff + strlen(buff), "%d\r\n", tmp->node->pid);//\t%s\r\n", tmp->node->pid, tmp->node->exec);
-    } while(tmp != list->TAIL);
+        sprintf(buff + strlen(buff), "%s\t\t%d\r\n", tmp->node->exec, tmp->node->pid);
+    }
 
     return buff;
 }

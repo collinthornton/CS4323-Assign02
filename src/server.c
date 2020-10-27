@@ -4,16 +4,25 @@
 #include "../include/background.h"
 #include "../include/clientServerEV.h"
 
-// #define EXEC_SERVER
+//#define EXEC_SERVER
 
 bool loop = true;
+bool in_foreground = false;
+
+Msg *resp;
+
+ProcessList background_list;
+
+int foreground_stdin[2];
 
 int stdin_bak;
 int stderr_bak;
 int stdout_bak;
 
-
 int server(void) {
+    pthread_t cmd_int;
+    Msg *msg = NULL;
+
     stdin_bak  = dup(STDIN_FILENO);
     stderr_bak = dup(STDERR_FILENO);
     stdout_bak = dup(STDOUT_FILENO);
@@ -22,78 +31,147 @@ int server(void) {
     printf("|----- SERVER:\t%d, %d\r\n", getppid(), getpid());
     #endif // VERBOSE
 
+    msg = NULL;
+
+    #ifndef EXEC_SERVER
     socket_init();
+    #endif // EXEC_SERVER
+
+    process_list_init(&background_list, NULL, NULL);
+    
 
     while(loop) {
-        //char dir_str[1024];
-        //getcwd(dir_str, sizeof(dir_str));
-        //printf("%s$> ", dir_str);
-        //fflush(stdout);
+        #ifdef EXEC_SERVER
+        char dir_str[1024];
+        getcwd(dir_str, sizeof(dir_str));
+        printf("%s$> ", dir_str);
+        fflush(stdout);
 
         char input_buff[1024];
         bzero(input_buff, sizeof(input_buff));
         
-        //fgets(input_buff, sizeof(input_buff), stdin);
-        //input_buff[strlen(input_buff)-1] = '\0';
-        Msg *msg;
+        fgets(input_buff, sizeof(input_buff), stdin);
+        input_buff[strlen(input_buff)-1] = '\0';
 
-        //msg = msg_allocate(input_buff, NULL, NULL);
-        do {
-            msg = socket_read();
+        msg = msg_allocate(input_buff, NULL, NULL);
+        #else
+        msg = socket_read();
+        #endif // EXEC_SERVER
 
-            // Sleep for 0.01 second
-            struct timespec ts;
-            ts.tv_sec  = 1E-2;
-            ts.tv_nsec = 1E7;
-            nanosleep(&ts, &ts);
-        } while(msg == NULL);
+        if(msg != NULL ) {
+            bool only_whitespace = true;
+
+            for(int i=strlen(msg->cmd)-1; i>=0; --i) {
+                if(msg->cmd[i] == ' ' || msg->cmd[i] == '\t') msg->cmd[i] = '\0';
+                else {
+                    only_whitespace = false;
+                    break;
+                }
+            }
+
+            char dir[500];
+            bzero(dir, sizeof(dir));
+            getcwd(dir, sizeof(dir));
+
+            if(only_whitespace) {
+                resp = msg_allocate(msg->cmd, "\0", dir);
+                resp->show_prompt = true;
+                
+                #ifndef EXEC_SERVER
+                socket_write(resp);
+                #else
+                msg_deallocate(resp);
+                #endif // EXEC_SERVER
+                
+                resp = NULL;
+                msg_deallocate(msg);
+            }
+            else if(in_foreground) {
+                // pipe to stdin of executing process
+                strcat(msg->cmd, "\n");
+                close(foreground_stdin[0]);
+                write(foreground_stdin[1], msg->cmd, sizeof(msg->cmd));
+                if(strcmp(msg->cmd, "eof\n") == 0) {
+                    close(foreground_stdin[1]);
+                   // printf("closed pipe\r\n");
+                }
+                msg_deallocate(msg);
+            }
+            else {
+                bool background = (msg->cmd[strlen(msg->cmd)-1] == '&') ? true : false;
+
+                resp = msg_allocate(msg->cmd, "\0", dir);
+                resp->show_prompt = background;
+                
+                #ifndef EXEC_SERVER
+                socket_write(resp);
+                #else
+                msg_deallocate(resp);
+                #endif // EXEC_SERVER
+                
+                resp = NULL;
+
+                pthread_create(&cmd_int, NULL, server_command_interpreter, (void*)msg);
+            }
+        }
 
 
-        server_command_interpreter(msg);
-        //printf("%s\r\n", msg->ret);
-        
-        // HISTORY
-        // INTERPRETER
-        // FOREGROUND
-        // BACKGROUND
+        if(resp != NULL) {
+            char dir[500];
+            bzero(dir, sizeof(dir));
+            getcwd(dir, sizeof(dir));
 
-        
-        char dir[500];
-        getcwd(dir, sizeof(dir));
-        strcpy(msg->dir, dir);
+            getcwd(dir, sizeof(dir));
+            strcpy(resp->dir, dir);
 
-        msg->show_prompt = true;
+            resp->show_prompt = true;
 
-        socket_write(msg);
-        //msg_deallocate(msg);
+            #ifdef EXEC_SERVER
+            printf("%s\r\n", resp->ret);
+            msg_deallocate(resp);
+            #else
+            socket_write(resp);
+            #endif // EXEC_SERVER
 
+            resp = NULL;
+        }
+
+
+        // Sleep for 0.01 second
+        struct timespec ts;
+        ts.tv_sec  = 1E-2;
+        ts.tv_nsec = 1E7;
+        nanosleep(&ts, &ts);
     }
 
     redirect(STDOUT_FILENO, stdout_bak);
     redirect(STDERR_FILENO, stderr_bak);
     redirect(STDIN_FILENO, stdin_bak);
 
-    //process_list_test();
 
-    //background_test();
-
-    //sleep(2);
+    #ifdef VERBOSE
     printf("Exiting server\r\n");
+    #endif // VERBOSE
 
     return 0;
 }
 
 
-Msg* server_command_interpreter(Msg *msg) {
-    int num_pipes = 1;
+void* server_command_interpreter(void* vargp) {
+    Msg *msg = (Msg*)vargp;
+
+    int num_pipes = 2;
     for(int i=0; i<strlen(msg->cmd); ++i) {
         if(msg->cmd[i] == '|') ++num_pipes;
     }
 
-    //bool background = false;
-    //if(strchr(msg->cmd, '&') != NULL) background = true;
+    bool background = (msg->cmd[strlen(msg->cmd)-1] == '&') ? true : false;
 
-    Process procs[num_pipes];
+    if(background) {
+        msg->cmd[strlen(msg->cmd)-1] = '\0';
+    }
+
+    Process procs[num_pipes-1];
     int pipes[num_pipes][2];
     for(int i=0; i<num_pipes; ++i) pipe(pipes[i]);
 
@@ -104,8 +182,10 @@ Msg* server_command_interpreter(Msg *msg) {
 
     char *pos = cmd;
     char *tmp_cmd = (char*)calloc(1024, sizeof(char));
+    
 
-    for(int i=0; i<num_pipes; ++i) {
+
+    for(int i=0; i<num_pipes-1; ++i) {
         char *oldpos;
         if(i==0) oldpos = pos;
         else oldpos = pos+2;
@@ -124,7 +204,13 @@ Msg* server_command_interpreter(Msg *msg) {
 
 
     // ITERATE THROUGH THE JOBS
-    for(int i=0; i<num_pipes; ++i) {
+    for(int i=1; i<num_pipes; ++i) {
+        if(!background) {
+            in_foreground = true;
+            foreground_stdin[0] = pipes[i-1][0];
+            foreground_stdin[1] = pipes[i-1][1];
+        } 
+
         #ifdef VERBOSE
         printf("num pipes: %d\r\n", num_pipes-1);
         printf("cmd: %s\r\n", cmd);
@@ -135,12 +221,17 @@ Msg* server_command_interpreter(Msg *msg) {
         printf("\r\n\r\n");
         #endif // VERBOSE
 
-        if(in_cmd_list(&procs[i])) {
+        if(in_cmd_list(&procs[i-1])) {
             // HANDLE OWN COMMANDS
+            if(background) {
+                procs[i-1].pid = getpid();
+                background_place_proc(&background_list, &procs[i-1]);
+            }
+
             char outbuff[5000];
             bzero(outbuff, sizeof(outbuff));
 
-            run_cmd_list(&procs[i], outbuff);
+            run_cmd_list(&procs[i-1], outbuff);
             write(pipes[i][1], outbuff, sizeof(outbuff));
             close(pipes[i][1]);
         }
@@ -156,26 +247,32 @@ Msg* server_command_interpreter(Msg *msg) {
                 case 0: {
                     // CHILD
                     close(pipes[i][0]);
-                    redirect(STDOUT_FILENO, pipes[i][1]);
                     redirect(STDERR_FILENO, pipes[i][1]);
+                    redirect(STDOUT_FILENO, pipes[i][1]);
+                    close(pipes[i][1]);
 
-                    if(i > 0) {
-                        redirect(STDIN_FILENO, pipes[i-1][0]);
-                    }
+                    redirect(STDIN_FILENO, pipes[i-1][0]);
+                    close(pipes[i-1][0]);
 
-                    run(&procs[i]);
+                    run(&procs[i-1]);
                     exit(0);
                 }
 
                 default:
                     // PARENT
                     close(pipes[i][1]);
-                    if(i > 0) close(pipes[i-1][0]);
-
+                    close(pipes[i-1][0]);
+                    if(background) {
+                        procs[i-1].pid = child;
+                        background_place_proc(&background_list, &procs[i-1]);
+                    } else {
+                        wait(NULL);
+                    }
                     break;
             }
         }
     }
+    in_foreground = false;
 
     char buff[5000];
 
@@ -183,21 +280,21 @@ Msg* server_command_interpreter(Msg *msg) {
     close(pipes[num_pipes-1][1]);
     while(read(pipes[num_pipes-1][0], buff, sizeof(buff)) != 0) { 
         // Sleep for 0.001 second
-    struct timespec ts;
+        struct timespec ts;
         ts.tv_sec  = 1E-3;
         ts.tv_nsec = 1E6;
         nanosleep(&ts, &ts);
     }
     close(pipes[num_pipes-1][0]);
 
-    //printf("%s\r\n", buff);
-
     strcpy(msg->ret, buff);
 
-    for(int i=0; i<num_pipes; ++i) {
+    for(int i=0; i<num_pipes-1; ++i) {
         process_rem(&procs[i]);
     }
-    return msg;
+
+    resp = msg_allocate(msg->cmd, msg->ret, NULL);
+    resp->show_prompt = true;
 }
 
 
@@ -205,7 +302,6 @@ Msg* server_command_interpreter(Msg *msg) {
 
 void redirect(int fdfrom, int fdto) {
     dup2(fdto, fdfrom);
-    close(fdto);
 }
 
 void run(Process *proc) {
@@ -230,7 +326,6 @@ void run_cmd_list(Process *proc, char *outbuff) {
         }
         if(chdir(proc->args[1]) != 0) {
             strcpy(outbuff ,"cd: not a valid folder");
-            fflush(stdout);
             return;
         }      
         strcpy(outbuff, "cd"); 
@@ -240,15 +335,22 @@ void run_cmd_list(Process *proc, char *outbuff) {
         // HANDLE HISTORY
         //! WRITE TO PIPE
     }
+    else if(strcmp(proc->exec, "jobs") == 0) {
+        background_update_procs(&background_list);
+        process_list_to_string(&background_list, outbuff);
+       // printf("%s\r\n", outbuff);
+        return;
+    }
 }
 
 
 bool in_cmd_list(Process *proc) {
-    int num_cmds = 3;
-    const char* cmd_list[3];
+    int num_cmds = 4;
+    const char* cmd_list[num_cmds];
     cmd_list[0] = "q";
     cmd_list[1] = "cd";
     cmd_list[2] = "history";
+    cmd_list[3] = "jobs";
 
     for(int i=0; i<num_cmds; ++i) {
         if(strcmp(cmd_list[i], proc->exec) == 0) return true;

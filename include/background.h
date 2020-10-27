@@ -25,12 +25,6 @@
 #include "../include/msg.h"
 #include "../include/process.h"
 
-//const char *BG_SHMEM = "/BACKGRROUND_SHARED_SPACE";
-
-void process_list_test(void);
-void background_test(void);
-
-//int* background_init();
 
 int background_place_proc(ProcessList *list, Process *proc);
 int background_update_procs(ProcessList *list);
