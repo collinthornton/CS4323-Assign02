@@ -1,3 +1,12 @@
+// ##########################################
+// 
+//   Author  -   Collin Thornton, Ethan Vascellaro
+//   Email   -   collin.thornton@okstate.edu
+//   Brief   -   Assignment 02 socket source
+//   Date    -   10-27-20
+//
+// ##########################################
+
 #include "../include/clientServerEV.h"
 
 int PORT = 8081;
@@ -9,6 +18,10 @@ char sock_input[SOCKET_BUFF];
 int sock_queue_len = 0;
 
 
+/**
+ * @brief Initialize the socket
+ * @return (int) return code
+ */
 int socket_init(void) {
     int len; 
     struct sockaddr_in servaddr, cli; 
@@ -53,6 +66,11 @@ int socket_init(void) {
 }
 
 
+
+/**
+ * @brief Read from the socket (nonblocking)
+ * @return (Msg*) NULL if nothing to read
+ */
 Msg* socket_read() {
     if(sock_queue_len <= 0) return NULL;
     --sock_queue_len;
@@ -66,6 +84,10 @@ Msg* socket_read() {
 }
 
 
+/**
+ * @brief Write to the socket (blocking)
+ * @return (int) return code
+ */
 int socket_write(Msg *msg) {
     char buff[SOCKET_BUFF];
     bzero(buff, sizeof(buff));
@@ -75,12 +97,20 @@ int socket_write(Msg *msg) {
     msg_deallocate(msg);
 }
 
+
+/**
+ * @brief Shutdown the socket
+ */
 void socket_close() {
     if(tid != 0) pthread_cancel(tid);
     close(connfd);
 }
 
-// THREAD TO READ SOCKET
+
+/**
+ * @brief Thread to managing blocking read calls
+ * @param vargp (void*) unused (NULL)
+ */
 void *sockReadThread(void *vargp) {
     while(!sock_exit_flag) {
         char buff[SOCKET_BUFF];

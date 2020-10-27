@@ -15,6 +15,14 @@
 
 #define SIZE 5000
 
+
+/**
+ * @brief allocate a Msg on heap. Must subsequently free memory with msg_deallocate()
+ * @param cmd (char*) string command. set to NULL if unused
+ * @param ret (char*) string return. set to NULL if unused
+ * @param dir (char*) current working directory set to NULL if unused
+ * @return (Msg*) Pointer to Msg allocated on heap
+ */
 Msg* msg_allocate(char* cmd, char* ret, char *dir) {
     Msg *msg = (Msg*)malloc(sizeof(Msg));
 
@@ -54,6 +62,11 @@ Msg* msg_allocate(char* cmd, char* ret, char *dir) {
     return msg;
 }
 
+
+/**
+ * @brief Deallocate Msg previously allocated by msg_allocate()
+ * @param msg (Msg*) msg allocated on heap
+ */
 void msg_deallocate(Msg *msg) {
     if(msg != NULL) {
         if(msg->cmd != NULL) free(msg->cmd);
@@ -66,6 +79,11 @@ void msg_deallocate(Msg *msg) {
 }
 
 
+/**
+ * @brief Convert Msg to string for socket comms. Should be returned to Msg by msg_deserialize()
+ * @param msg (Msg*) Msg to be converted
+ * @param buff (char*) String buffer
+ */
 char* msg_serialize(Msg *msg, char *buff) { 
     
     if(msg->cmd == NULL) return NULL;
@@ -95,6 +113,12 @@ char* msg_serialize(Msg *msg, char *buff) {
 }
 
 
+
+/**
+ * @brief Conver string to Msg for socket comms. Should be preceded by msg_serialize()
+ * @param str (const char*) String containing Msg information
+ * @return (Msg*) msg struct allocated on heap
+ */
 Msg* msg_deserialize(const char* str) {
     //printf("%s\r\n", str);
 

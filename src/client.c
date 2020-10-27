@@ -19,19 +19,26 @@
 
 //#define EXEC_CLIENT
 
-bool exit_flag = false;
+bool exit_flag = false;                 // FLAG TO CONTINUE EXECUTING
 
-pthread_t sock_tid, stdin_tid;
-int sockfd;
+pthread_t sock_tid, stdin_tid;          // THREAD IDs
+int sockfd;                             // FILE DESCRIPTOR FOR SOCKET
 
-char stdin_input[1024];
-bool stdin_input_read = false;
+char stdin_input[1024];                 // BUFFER FOR stdin 
+bool stdin_input_read = false;          // FLAG FOR NEW MESSAGE ON stdin
 
-char socket_input[SOCKET_BUFF];
-int socket_queue_len = 0;
+char socket_input[SOCKET_BUFF];         // BUFFER FOR SOCKET
+int socket_queue_len = 0;               // FLAG FOR NEW MESSAGE ON socket
 
 
+/**
+ * @brief Run the client process
+ * @return (int) return code
+ */
 int client(void) {
+
+    // BEGIN SETUP
+    
     #ifdef VERBOSE
     printf("|----- CLIENT:\t%d, %d\r\n", getppid(), getpid());
     #endif // VERBOSE
@@ -39,8 +46,8 @@ int client(void) {
     bzero(socket_input, sizeof(socket_input));
     bzero(stdin_input, sizeof(stdin_input));
     
+    // SETUP SOCKET
     const int PORT = 8081;
-
     struct sockaddr_in servaddr, cli;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,9 +77,7 @@ int client(void) {
     } 
     
 
-    // SHELL INTERFACE
-    char dir[1024];
-    getcwd(dir, sizeof(dir));
+    // SETUP SHELL INTERFACE
 
     const char *user = getenv("USER");
 
@@ -80,15 +85,23 @@ int client(void) {
     strcpy(home_dir, "/home/");
     strcat(home_dir, user);
 
+
+    // LAUNCH THREADS FOR stdin AND socket
+
     pthread_create(&stdin_tid, NULL, inputThread, NULL);
     pthread_create(&sock_tid, NULL, socketReadThread, NULL);
 
-    //(strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
+
+    // DISPLAY ASSIGNMENT INFORMATION
+
     printf("CS4323 ASSIGNMENT II GROUP I\r\n");
     printf("C SHELL EMULATOR\r\n\r\n");
     printf("Collin Thornton\r\nEthan Vascellaro\r\nKazi Sharif\r\nCaleb Goodart\r\n\r\n");
     printf("HELP DISPLAY:\r\n\r\n");
 
+
+    // SEND INITIAL COMMAND TO DISPLAY help
+    
     Msg *init_msg;
     init_msg = msg_allocate("help", NULL, NULL);
     char init_msg_buff[SOCKET_BUFF];
@@ -177,7 +190,11 @@ int client(void) {
 }
 
 
-// THREAD TO READ STDIN
+
+/**
+ * @brief Manage input on stdin. Multithreaded for nonblocking.
+ * @param vargp (void*) unused (NULL)
+ */
 void *inputThread(void *vargp) {
     while(!exit_flag) {
         char *ret = fgets(stdin_input, sizeof(stdin_input), stdin);
@@ -191,7 +208,10 @@ void *inputThread(void *vargp) {
     }
 }
 
-// THREAD TO READ SOCKET
+/**
+ * @brief Manage input from socket-server. Multithreaded for nonblocking.
+ * @param vargp (void*) unused (NULL)
+ */
 void *socketReadThread(void *vargp) {
     while(!exit_flag) {
         char buff[SOCKET_BUFF];

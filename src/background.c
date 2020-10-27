@@ -12,7 +12,26 @@
 //#define EXEC_BACK
 
 
+/**
+ * @brief Places a process into the background list
+ * @param list (ProcessList*) Pointer to the list
+ * @param proc (Process*) Pointer to the process to be added
+ * @return (int) Length of list
+ */
+int background_place_proc(ProcessList *list, Process *proc) {
 
+    proc->initialized = true;
+    proc->returned = false;
+
+    process_list_add_node(list, proc);
+}
+
+
+/**
+ * @brief Remove exited processes from list
+ * @param list (ProcessList*) Pointer to the list
+ * @return (int) Length of list
+ */
 int background_update_procs(ProcessList *list) {
     if(list->num_processes == 0) return 0;
 
@@ -32,14 +51,6 @@ int background_update_procs(ProcessList *list) {
     }
     
 }
-int background_place_proc(ProcessList *list, Process *proc) {
-
-    proc->initialized = true;
-    proc->returned = false;
-
-    process_list_add_node(list, proc);
-}
-
 
 
 #ifdef EXEC_BACK

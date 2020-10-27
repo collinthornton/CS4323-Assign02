@@ -1,6 +1,6 @@
 // ##########################################
 // 
-//   Author  -   Group I
+//   Author  -   Collin Thornton
 //   Email   -   collin.thornton@okstate.edu
 //   Brief   -   Assignment 02 Part 5 include
 //   Date    -   10-14-20
@@ -18,18 +18,23 @@
 #include <string.h>
 
 #include <sys/wait.h>   // for wait()
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 
 #include "../include/msg.h"
 #include "../include/process.h"
 
-
+/**
+ * @brief Places a process into the background list
+ * @param list (ProcessList*) Pointer to the list
+ * @param proc (Process*) Pointer to the process to be added
+ * @return (int) Length of list
+ */
 int background_place_proc(ProcessList *list, Process *proc);
+
+/**
+ * @brief Remove exited processes from list
+ * @param list (ProcessList*) Pointer to the list
+ * @return (int) Length of list
+ */
 int background_update_procs(ProcessList *list);
-
-const char* background_get_return();
-
 
 #endif // BACKGROUND_H

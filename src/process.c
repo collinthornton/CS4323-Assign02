@@ -15,6 +15,13 @@
 
 //#define EXEC_PROCESS
 
+
+/**
+ * @brief Initialize fields of Process struct
+ * @param proc (Process*) process to be initialized
+ * @param msg (Msg*) Msg from which to fill Process
+ * @return (Process*) pointer to proc
+ */
 Process* process_init(Process *proc, Msg *msg) {
     proc->initialized = false;
     proc->returned = false;
@@ -69,6 +76,12 @@ Process* process_init(Process *proc, Msg *msg) {
     return proc;
 }
 
+
+/**
+ * @brief Deallocated all fields of Process struct
+ * @param proc (Process*) process to be deallocated
+ * @return (int) return code
+ */
 int process_rem(Process *proc) {
     if(proc->ret != NULL) free(proc->ret);
     if(proc->exec != NULL)free(proc->exec);
@@ -81,6 +94,14 @@ int process_rem(Process *proc) {
     }
 }
 
+
+/**
+ * @brief initalize process linked list
+ * @param list (ProcessList*) Pointer to list to be initialized
+ * @param HEAD (ProcessNode*) Pointer to HEAD of list. NULL if unused.
+ * @param TAIL (ProcessNode*) Pointer to TAIL of list. NULL if unused.
+ * @return (ProcessList*) same as list
+ */
 ProcessList* process_list_init(ProcessList *list, ProcessNode *HEAD, ProcessNode *TAIL) {
     list->num_processes = 0;
 
@@ -91,6 +112,13 @@ ProcessList* process_list_init(ProcessList *list, ProcessNode *HEAD, ProcessNode
     list->TAIL = TAIL;
 }
 
+
+/**
+ * @brief add node to linked list
+ * @param list (ProcessList*) pointer to list
+ * @param proc (Process*) process to be added
+ * @return (int) size of list
+ */
 int process_list_add_node(ProcessList *list, Process *proc) {
     if(list == NULL) return -1;
     if(list->num_processes < 0) return -2;
@@ -138,6 +166,13 @@ int process_list_add_node(ProcessList *list, Process *proc) {
     return list->num_processes;
 }
 
+
+/**
+ * @brief remove node from linked list
+ * @param list (ProcessList*) pointer to list
+ * @param proc (Process*) process to be removed
+ * @return (int) length of list
+ */
 int process_list_rem_node(ProcessList *list, Process *proc) {
     if(list == NULL) return -1;
     if(list->HEAD == NULL || list->TAIL == NULL || list->num_processes <= 0) return -2;
@@ -186,6 +221,12 @@ int process_list_rem_node(ProcessList *list, Process *proc) {
     return list->num_processes;
 }
 
+
+/**
+ * @brief Deallocate list, all nodes, and all process in list
+ * @param list (ProcessList*) list to be removed
+ * @return (int) return code
+ */
 int process_list_del_list(ProcessList *list) {
     if(list == NULL) return -1;
     if(list->HEAD == NULL || list->TAIL == NULL || list->num_processes < 0) return -2;
@@ -203,6 +244,13 @@ int process_list_del_list(ProcessList *list) {
     return list->num_processes;
 }
 
+
+/**
+ * @brief convert process list to string
+ * @param list (ProcessList*) list to be converted
+ * @param buff (char[]) string buffer
+ * @return (char*) pointer to buff
+ */
 const char* process_list_to_string(ProcessList *list, char buff[]) {
     sprintf(buff, "%d jobs\r\n", list->num_processes);
     
