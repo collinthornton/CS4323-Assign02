@@ -1,6 +1,6 @@
 // ##########################################
 // 
-//   Author  -   Group I
+//   Author  -   Collin Thornton
 //   Email   -   collin.thornton@okstate.edu
 //   Brief   -   Assignment 02 main
 //   Date    -   10-14-20
@@ -16,9 +16,6 @@
 
 #include "../include/client.h"
 #include "../include/server.h"
-
-int server(void);
-int client(void);
 
 void test(void);
 

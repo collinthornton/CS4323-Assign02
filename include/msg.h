@@ -34,20 +34,20 @@ typedef struct {
  * @param dir (char*) current working directory set to NULL if unused
  * @return (Msg*) Pointer to Msg allocated on heap
  */
-Msg* msg_allocate(char* cmd, char *ret, char* dir);      \
+Msg* msg_allocate(char* cmd, char *ret, char* dir);      
 
 /**
  * @brief Deallocate Msg previously allocated by msg_allocate()
  * @param msg (Msg*) msg allocated on heap
  */
-void msg_deallocate(Msg *msg);                 \
+void msg_deallocate(Msg *msg);                 
 
 /**
  * @brief Convert Msg to string for socket comms. Should be returned to Msg by msg_deserialize()
  * @param msg (Msg*) Msg to be converted
  * @param buff (char*) String buffer
  */
-char* msg_serialize(Msg *msg, char *buff);              \
+char* msg_serialize(Msg *msg, char *buff);              
 
 /**
  * @brief Conver string to Msg for socket comms. Should be preceded by msg_serialize()

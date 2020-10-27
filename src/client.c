@@ -150,12 +150,9 @@ int client(void) {
         if(socket_queue_len > 0) {
             --socket_queue_len;
 
-            //printf("%s\r\n", socket_input);
-
             // DESERIALZE MESSAGE
             Msg *msg = msg_deserialize(socket_input);
             printf("%s", msg->ret);
-            //printf("%d", msg->show_prompt);
             fflush(stdout);
             
             // SHOW PROMPT IF DESIRED
