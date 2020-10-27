@@ -96,10 +96,13 @@ char* msg_serialize(Msg *msg, char *buff) {
 
 
 Msg* msg_deserialize(const char* str) {
+    //printf("%s\r\n", str);
+
     char *cmd = (char*)calloc(SIZE, sizeof(char));
     char *ret = (char*)calloc(SIZE, sizeof(char));
     char *dir = (char*)calloc(SIZE, sizeof(char));
-    char prmpt[1];
+    char prmpt[2];
+    bzero(prmpt, sizeof(prmpt));
 
     char *pos1 = strstr(str, ":-:");
     strncpy(cmd, str, strlen(str)-strlen(pos1));
@@ -114,6 +117,7 @@ Msg* msg_deserialize(const char* str) {
     strncpy(prmpt, pos3+3, strlen(pos3)-strlen(pos4)-3);
 
     Msg *msg = msg_allocate(cmd, ret, dir);
+
     msg->show_prompt = (strcmp(prmpt, "t") == 0) ? true : false;
 
     if(cmd != NULL) free(cmd);

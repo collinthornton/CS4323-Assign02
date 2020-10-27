@@ -1,6 +1,6 @@
 #include "../include/clientServerEV.h"
 
-int PORT = 8082;
+int PORT = 8081;
 int ssockfd, connfd;
 pthread_t tid = 0;
 
@@ -58,6 +58,7 @@ Msg* socket_read() {
     --sock_queue_len;
 
     char buff[SOCKET_BUFF];
+    bzero(buff, sizeof(SOCKET_BUFF));
     strcpy(buff, sock_input);
 
     Msg *msg = msg_deserialize(buff);

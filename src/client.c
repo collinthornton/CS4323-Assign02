@@ -39,7 +39,7 @@ int client(void) {
     bzero(socket_input, sizeof(socket_input));
     bzero(stdin_input, sizeof(stdin_input));
     
-    const int PORT = 8082;
+    const int PORT = 8081;
 
     struct sockaddr_in servaddr, cli;
 
@@ -141,7 +141,6 @@ int client(void) {
 
             // DESERIALZE MESSAGE
             Msg *msg = msg_deserialize(socket_input);
-            
             printf("%s", msg->ret);
             //printf("%d", msg->show_prompt);
             fflush(stdout);
@@ -203,6 +202,7 @@ void *socketReadThread(void *vargp) {
             exit(1);
         }
         strcpy(socket_input, buff);
+
         ++socket_queue_len;
     }
 }
