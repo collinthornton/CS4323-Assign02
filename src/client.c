@@ -86,7 +86,7 @@ int client(void) {
     //(strcmp(dir, home_dir) == 0) ? printf("%s@CS4323shell:%s~$ ", user, dir) : printf("%s@CS4323shell:%s$ ", user, dir);
     printf("CS4323 ASSIGNMENT II GROUP I\r\n");
     printf("C SHELL EMULATOR\r\n\r\n");
-    printf("Collin Thornton\r\nEthan Vascellar\r\nKazi Sharif\r\nCaleb Goodart\r\n\r\n");
+    printf("Collin Thornton\r\nEthan Vascellaro\r\nKazi Sharif\r\nCaleb Goodart\r\n\r\n");
     printf("HELP DISPLAY:\r\n\r\n");
 
     Msg *init_msg;

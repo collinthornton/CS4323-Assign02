@@ -1,7 +1,7 @@
 #include "../include/clientServerEV.h"
 
 int PORT = 8082;
-int sockfd, connfd;
+int ssockfd, connfd;
 pthread_t tid = 0;
 
 bool sock_exit_flag = false;
@@ -14,8 +14,8 @@ int socket_init(void) {
     struct sockaddr_in servaddr, cli; 
     
     // Create and verify socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-    if (sockfd == -1) { 
+    ssockfd = socket(AF_INET, SOCK_STREAM, 0); 
+    if (ssockfd == -1) { 
         printf("Socket Failed\n"); 
         exit(0); 
     }
@@ -29,13 +29,13 @@ int socket_init(void) {
     servaddr.sin_port = htons(PORT); 
   
     // Binding socket
-    if ((bind(sockfd, (sockA*)&servaddr, sizeof(servaddr))) != 0) { 
+    if ((bind(ssockfd, (sockA*)&servaddr, sizeof(servaddr))) != 0) { 
         printf("Bind Failed\n"); 
         exit(0); 
     }
   
     // Listening
-    if ((listen(sockfd, 10)) != 0) { 
+    if ((listen(ssockfd, 10)) != 0) { 
         printf("Listen Failed\n"); 
         exit(0); 
     }
@@ -43,7 +43,7 @@ int socket_init(void) {
     len = sizeof(cli); 
   
     // Accept client and begin chat
-    connfd = accept(sockfd, (sockA*)&cli, &len); 
+    connfd = accept(ssockfd, (sockA*)&cli, &len); 
     if (connfd < 0) { 
         printf("Accept Failed\n"); 
         exit(0); 
