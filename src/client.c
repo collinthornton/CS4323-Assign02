@@ -218,6 +218,7 @@ void *socketReadThread(void *vargp) {
             perror("client:  socket closed");
             exit(1);
         }
+        printf("CLIENT RECEIVED: %s\r\n", buff);
         strcpy(socket_input, buff);
 
         ++socket_queue_len;

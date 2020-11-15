@@ -120,6 +120,7 @@ void *sockReadThread(void *vargp) {
             perror("client:  socket closed");
             exit(1);
         }
+        printf("SERVER RECEIVED: %s\r\n", buff);
         strcpy(sock_input, buff);
         ++sock_queue_len;
     }
